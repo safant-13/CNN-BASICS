@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Draw Clone - AI Drawing Game</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+</head>
+<body>
+    <!-- Start Screen -->
+    <div id="startScreen" class="screen active">
+        <div class="container">
+            <h1>Quick Draw!</h1>
+            <p class="subtitle">Can a neural network recognize your doodles?</p>
+            <p class="description">You'll have 20 seconds to draw each object. The AI will try to guess what you're drawing!</p>
+            <button id="startBtn" class="btn-primary">Let's Draw!</button>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" class="screen">
+        <div class="game-header">
+            <div class="timer-container">
+                <span class="timer-label">Time:</span>
+                <span id="timer" class="timer">20</span>
+            </div>
+            <div class="prompt-container">
+                <span class="prompt-label">Draw:</span>
+                <span id="drawPrompt" class="prompt">Loading...</span>
+            </div>
+            <div class="score-container">
+                <span class="score-label">Score:</span>
+                <span id="score" class="score">0</span>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="drawingCanvas"></canvas>
+            <div class="controls">
+                <button id="clearBtn" class="btn-secondary">Clear</button>
+                <button id="undoBtn" class="btn-secondary">Undo</button>
+            </div>
+        </div>
+
+        <div class="predictions-container">
+            <h3>AI Predictions:</h3>
+            <div id="predictions" class="predictions">
+                <div class="prediction-item">Waiting for you to draw...</div>
+            </div>
+        </div>
+
+        <div class="feedback" id="feedback"></div>
+    </div>
+
+    <!-- Results Screen -->
+    <div id="resultsScreen" class="screen">
+        <div class="container">
+            <h1>Game Over!</h1>
+            <div class="results">
+                <p class="final-score">Your Score: <span id="finalScore">0</span></p>
+                <p class="rounds-played">Rounds Played: <span id="roundsPlayed">0</span></p>
+                <div id="roundSummary" class="round-summary"></div>
+            </div>
+            <div class="button-group">
+                <button id="playAgainBtn" class="btn-primary">Play Again</button>
+                <button id="homeBtn" class="btn-secondary">Home</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loader"></div>
+        <p>Loading AI Model...</p>
+    </div>
+
+    <script src="drawing.js"></script>
+    <script src="game-fixed.js"></script>
+</body>
+</html>

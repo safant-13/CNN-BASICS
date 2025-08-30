@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Model Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+</head>
+<body>
+    <h1>TensorFlow.js Model Test</h1>
+    <div id="status">Loading...</div>
+    <pre id="output"></pre>
+    
+    <script>
+        async function testModel() {
+            const statusDiv = document.getElementById('status');
+            const outputDiv = document.getElementById('output');
+            
+            try {
+                statusDiv.textContent = 'Attempting to load model...';
+                
+                // Try different paths
+                const paths = [
+                    './model/model.json',
+                    'model/model.json',
+                    '/model/model.json',
+                    window.location.origin + '/model/model.json'
+                ];
+                
+                let model = null;
+                let successPath = null;
+                
+                for (const path of paths) {
+                    try {
+                        outputDiv.textContent += `Trying path: ${path}\n`;
+                        model = await tf.loadLayersModel(path);
+                        successPath = path;
+                        break;
+                    } catch (err) {
+                        outputDiv.textContent += `  Failed: ${err.message}\n\n`;
+                    }
+                }
+                
+                if (model) {
+                    statusDiv.textContent = 'Model loaded successfully!';
+                    outputDiv.textContent += `\nSuccess with path: ${successPath}\n`;
+                    outputDiv.textContent += `\nModel summary:\n`;
+                    outputDiv.textContent += `Input shape: ${JSON.stringify(model.inputs[0].shape)}\n`;
+                    outputDiv.textContent += `Output shape: ${JSON.stringify(model.outputs[0].shape)}\n`;
+                    
+                    // Test prediction
+                    const testInput = tf.zeros([1, 28, 28, 1]);
+                    const prediction = model.predict(testInput);
+                    const result = await prediction.array();
+                    outputDiv.textContent += `\nTest prediction output: ${result[0].map(v => v.toFixed(3)).join(', ')}\n`;
+                    
+                    testInput.dispose();
+                    prediction.dispose();
+                } else {
+                    statusDiv.textContent = 'Failed to load model from any path';
+                }
+                
+            } catch (error) {
+                statusDiv.textContent = 'Error occurred';
+                outputDiv.textContent = `Error: ${error.message}\n\nStack: ${error.stack}`;
+            }
+        }
+        
+        // Run test when page loads
+        testModel();
+    </script>
+</body>
+</html>

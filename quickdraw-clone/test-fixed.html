@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickDraw Test - Fixed Preprocessing</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        
+        #canvas {
+            border: 2px solid #333;
+            cursor: crosshair;
+            background: white;
+            margin: 20px 0;
+        }
+        
+        .controls {
+            margin: 10px 0;
+        }
+        
+        button {
+            margin: 0 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        #result {
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            min-width: 300px;
+        }
+        
+        .prediction {
+            margin: 5px 0;
+            padding: 5px;
+            background: #e0e0e0;
+            border-radius: 5px;
+        }
+        
+        .top-prediction {
+            background: #4CAF50;
+            color: white;
+            font-weight: bold;
+        }
+        
+        #debug {
+            margin: 20px 0;
+            padding: 10px;
+            background: #333;
+            color: #0f0;
+            font-family: monospace;
+            white-space: pre;
+            max-width: 600px;
+            overflow-x: auto;
+            display: none;
+        }
+        
+        #debug.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>QuickDraw Test - Fixed Preprocessing</h1>
+    
+    <div class="controls">
+        <button onclick="clearCanvas()">Clear Canvas</button>
+        <button onclick="makePrediction()">Predict</button>
+        <button onclick="toggleDebug()">Toggle Debug</button>
+    </div>
+    
+    <canvas id="canvas" width="400" height="400"></canvas>
+    
+    <div id="result">
+        <h3>Predictions:</h3>
+        <div id="predictions">Draw something and click Predict!</div>
+    </div>
+    
+    <div id="debug"></div>
+    
+    <script>
+        // Global variables
+        let model = null;
+        let classes = [];
+        let isDrawing = false;
+        let debugMode = false;
+        let canvas, ctx;
+        
+        // Initialize when page loads
+        window.addEventListener('load', async () => {
+            await loadModel();
+            setupCanvas();
+        });
+        
+        // Load the model
+        async function loadModel() {
+            try {
+                console.log('Loading model...');
+                model = await tf.loadLayersModel('./model/model.json');
+                console.log('Model loaded successfully');
+                
+                // Load classes
+                const response = await fetch('./model/classes.json');
+                const data = await response.json();
+                classes = data.classes;
+                console.log('Classes loaded:', classes);
+                
+                document.getElementById('predictions').innerHTML = 'Model loaded! Start drawing.';
+            } catch (error) {
+                console.error('Error loading model:', error);
+                document.getElementById('predictions').innerHTML = 'Error loading model: ' + error.message;
+            }
+        }
+        
+        // Setup canvas for drawing
+        function setupCanvas() {
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+            
+            // Set white background
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Setup drawing properties
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 8;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            // Mouse events
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+            
+            // Touch events for mobile
+            canvas.addEventListener('touchstart', handleTouch);
+            canvas.addEventListener('touchmove', handleTouch);
+            canvas.addEventListener('touchend', stopDrawing);
+        }
+        
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+        
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        }
+        
+        function stopDrawing() {
+            isDrawing = false;
+        }
+        
+        function handleTouch(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 
+                                             e.type === 'touchmove' ? 'mousemove' : 'mouseup', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        }
+        
+        function clearCanvas() {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = 'black';
+            document.getElementById('predictions').innerHTML = 'Canvas cleared. Draw something!';
+            document.getElementById('debug').textContent = '';
+        }
+        
+        // Fixed preprocessing function
+        function preprocessCanvas(canvas) {
+            // Create temporary canvas for resizing
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 28;
+            tempCanvas.height = 28;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Fill with white background first
+            tempCtx.fillStyle = 'white';
+            tempCtx.fillRect(0, 0, 28, 28);
+            
+            // Draw the resized image
+            tempCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, 28, 28);
+            
+            // Get image data
+            const imageData = tempCtx.getImageData(0, 0, 28, 28);
+            const data = imageData.data;
+            
+            // Convert to grayscale and normalize
+            const grayscale = [];
+            for (let i = 0; i < data.length; i += 4) {
+                // Standard grayscale conversion
+                const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                // Normalize to [0, 1]
+                const normalized = gray / 255.0;
+                grayscale.push(normalized);
+            }
+            
+            // Debug output
+            if (debugMode) {
+                const debugDiv = document.getElementById('debug');
+                let debugText = 'Preprocessing Debug:\n';
+                
+                const min = Math.min(...grayscale);
+                const max = Math.max(...grayscale);
+                const mean = grayscale.reduce((a, b) => a + b, 0) / grayscale.length;
+                const std = Math.sqrt(grayscale.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / grayscale.length);
+                
+                debugText += `Stats: Min=${min.toFixed(3)}, Max=${max.toFixed(3)}, Mean=${mean.toFixed(3)}, Std=${std.toFixed(3)}\n\n`;
+                
+                // Visual representation
+                debugText += 'Visual (28x28):\n';
+                for (let row = 0; row < 28; row++) {
+                    let rowStr = '';
+                    for (let col = 0; col < 28; col++) {
+                        const val = grayscale[row * 28 + col];
+                        if (val < 0.2) rowStr += '█';
+                        else if (val < 0.5) rowStr += '▓';
+                        else if (val < 0.8) rowStr += '░';
+                        else rowStr += ' ';
+                    }
+                    debugText += rowStr + '\n';
+                }
+                
+                debugDiv.textContent = debugText;
+            }
+            
+            // Create tensor
+            return tf.tensor4d(grayscale, [1, 28, 28, 1]);
+        }
+        
+        async function makePrediction() {
+            if (!model) {
+                alert('Model not loaded yet!');
+                return;
+            }
+            
+            try {
+                // Preprocess the canvas
+                const input = preprocessCanvas(canvas);
+                
+                // Make prediction
+                const prediction = await model.predict(input).data();
+                
+                // Clean up tensor
+                input.dispose();
+                
+                // Get top 5 predictions
+                const results = classes.map((cls, idx) => ({
+                    class: cls,
+                    confidence: prediction[idx]
+                })).sort((a, b) => b.confidence - a.confidence).slice(0, 5);
+                
+                // Display results
+                let html = '';
+                results.forEach((result, idx) => {
+                    const percentage = (result.confidence * 100).toFixed(1);
+                    const className = idx === 0 ? 'prediction top-prediction' : 'prediction';
+                    html += `<div class="${className}">${result.class}: ${percentage}%</div>`;
+                });
+                
+                document.getElementById('predictions').innerHTML = html;
+                
+            } catch (error) {
+                console.error('Prediction error:', error);
+                document.getElementById('predictions').innerHTML = 'Error: ' + error.message;
+            }
+        }
+        
+        function toggleDebug() {
+            debugMode = !debugMode;
+            document.getElementById('debug').classList.toggle('active');
+            if (!debugMode) {
+                document.getElementById('debug').textContent = '';
+            }
+        }
+    </script>
+</body>
+</html>
