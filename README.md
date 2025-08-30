@@ -7,9 +7,9 @@ This is a repo made for learning the basics of CNN. I have attached the PPT I us
 
 
 ## Useful Links
-An Interactive Node-Link Visualization of Convolutional Neural Networks:
+
 - [An Interactive Node-Link Visualization of Convolutional Neural Networks](https://adamharley.com/nn_vis/)
-Quick Draw frm Google!
+
 - [Quick Draw from Google](https://quickdraw.withgoogle.com/)
-My colab notebook for practice
+
 - [My Colab Implementation of Quick Draw with CNN](https://colab.research.google.com/drive/13g7zmwYYppHCmc0wz9C-xTktTfsxcOfE?usp=sharing)
