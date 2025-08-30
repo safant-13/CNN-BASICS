@@ -13,3 +13,6 @@ This is a repo made for learning the basics of CNN. I have attached the PPT I us
 - [Quick Draw from Google](https://quickdraw.withgoogle.com/)
 
 - [My Colab Implementation of Quick Draw with CNN](https://colab.research.google.com/drive/13g7zmwYYppHCmc0wz9C-xTktTfsxcOfE?usp=sharing)
+
+
+Note: i also made a simple app (.apk) using the models (only andriod lol)
